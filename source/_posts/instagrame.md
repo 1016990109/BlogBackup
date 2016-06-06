@@ -22,7 +22,7 @@ categories: 生活
 ☆ 通过接收和发送赞和评论与朋友互动
 ☆ iPhone前置和后置摄像头的全面支持
 
-可能大家用的时候会感到很奇怪，*怎么网页版的instagrame不支持上传照片么*？可能是instagrame更注重生活中的抓拍吧，生活中还是使用移动设备多一点，所以它这个设计也是符合它的理念的（快速记录生活）。
+可能大家用的时候会感到很奇怪，**怎么网页版的instagrame不支持上传照片么**？可能是instagrame更注重生活中的抓拍吧，生活中还是使用移动设备多一点，所以它这个设计也是符合它的理念的（快速记录生活）。
 
 instagrame分享图片的时候可以选择地理位置（最后还可以生成图片地图哦^_^），也可以选择分享的对象，非常的个性化，可以看下效果哦！
 ![图片地图](/assets/img/instagrame.png "图片地图")
@@ -30,3 +30,7 @@ instagrame分享图片的时候可以选择地理位置（最后还可以生成�
 ## 最后说两句
 instagrame还可以上传小视频，有点像现在的微信小视频之类的，不过只能最多15秒。
 总之，我还是比较喜欢instagrame来收录生活中的场景的。
+
+参考资料：
+1. http://baike.baidu.com/link?url=QoodiA5Hzcnxlq268Lk3jkOPedAy3ICAVI-T6LKpay6A08o6UaTSU4tUrpqQuXJhFix9R3IAYzWN0KFY01iPRa
+2. http://1016990109.github.io/2016/05/20/instagrame/
