@@ -128,7 +128,7 @@ var Instagram = (function(){
 				console.log("Please open 'http://instagram.com/developer/clients/manage/' to get your client-id.");
 				return;
 			}
-			getList("https://api.instagram.com/v1/users/"+ userId +"/media/recent/?access_token=3252885684.5c9e406.220b85f5454b42debafcf7630e4e0caf&count=100");
+			getList("https://api.instagram.com/v1/users/"+ userId +"/media/recent/?access_token=3252885684.5c9e406.abe51ad321ec4246baaf9440bfc31a31&count=100");
 			bind();
 		}
 	}
