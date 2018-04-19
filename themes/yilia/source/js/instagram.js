@@ -128,7 +128,8 @@ var Instagram = (function(){
 				console.log("Please open 'http://instagram.com/developer/clients/manage/' to get your client-id.");
 				return;
 			}
-			getList("https://api.instagram.com/v1/users/"+ userId +"/media/recent/?access_token=3252885684.5c9e406.abe51ad321ec4246baaf9440bfc31a31&count=100");
+			// https://api.instagram.com/oauth/authorize/?client_id=5c9e4068f0c8461bab7b23809c1cd923&redirect_uri=http://1016990109.github.io&response_type=code
+			getList("https://api.instagram.com/v1/users/"+ userId +"/media/recent/?access_token=3252885684.5c9e406.460d35f13c374a28bfc0ae0e05f9d24b&count=100");
 			bind();
 		}
 	}
