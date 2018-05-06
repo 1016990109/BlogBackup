@@ -1,5 +1,5 @@
 ---
-title: Vue 的一些注意事项
+title: Vue 基础的一些注意事项
 date: 2018-04-17 15:47:16
 tags:
     - 前端
@@ -230,6 +230,15 @@ var vm = new Vue({
 </component>
 ```
 
+动态组件需要缓存的时候可以使用 keep-alive，失活的组件会被缓存，避免重复渲染：
+
+```html
+<!-- 失活的组件将会被缓存！-->
+<keep-alive>
+  <component v-bind:is="currentTabComponent"></component>
+</keep-alive>
+```
+
 ### 组件间的循环引用
 
 常见的情况是文件系统，文件夹(folder)包含的内容(content)可能包含文件夹(folder)，这样就形成了循环引用，当使用 Vue.component 将这两个组件注册为全局组件的时候，框架会自动为你解决这个矛盾。然而，如果你使用诸如 webpack 或者 Browserify 之类的模块化管理工具来 require/import 组件的话，就会报错了：
@@ -250,6 +259,33 @@ beforeCreate: function () {
 
 使用 v-once 指令使得模板只会渲染一遍而不会监听数据改变。
 
-***
+## 处理边界情况
 
-写论文去了，之后再更新...
+### 依赖注入
+
+> provide 选项允许我们指定我们想要提供给后代组件的数据/方法。在这个例子中，就是 <google-map> 内部的 getMap 方法：
+
+```js
+provide: function () {
+  return {
+    getMap: this.getMap
+  }
+}
+```
+
+在任何后代都能使用getMap方法，只要在后代组件里声明注入：
+
+```js
+inject: ['getMap']
+```
+
+### 内联模板
+
+```html
+<button-message v-on:message="handleMessage" inline-template>
+      <p>slot</p>
+</button-message>
+```
+
+最后渲染的会是slot，而不是button-message定义的模板内容。
+
