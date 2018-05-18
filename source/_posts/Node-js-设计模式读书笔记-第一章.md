@@ -232,11 +232,11 @@ console.log((person.fullname = 'Alan Turing')) // "Alan Turing"
 console.log(person.name) // "Alan"
 ```
 
-可以看到第二个console.log输出的是“Alan Turing”，这是因为调用set后默认返回get获得的值。
+可以看到第二个 console.log 输出的是“Alan Turing”，这是因为调用 set 后默认返回 get 获得的值。
 
-### Map and Set collections(Map和Set集合)
+### Map and Set collections(Map 和 Set 集合)
 
-原来我们建立hash map的时候都是用`object`来完成的，而现在可以直接使用`Map`原型，提供了set、get、has、delete方法和size属性，比使用`object`更加直接、简单，遍历可使用`for...of`语法，这种遍历方式是和Map中属性的插入顺序是一样的(这在普通`object`中是无法保证的)。
+原来我们建立 hash map 的时候都是用`object`来完成的，而现在可以直接使用`Map`原型，提供了 set、get、has、delete 方法和 size 属性，比使用`object`更加直接、简单，遍历可使用`for...of`语法，这种遍历方式是和 Map 中属性的插入顺序是一样的(这在普通`object`中是无法保证的)。
 
 ```js
 const tests = new Map();
@@ -248,13 +248,13 @@ const tests = new Map();
 }
 ```
 
-`Set`只允许存在不同的值，和数学上的集合是一个概念，里面内容可以是`number`也可以是`object`或`function`，除了set换成add外其他的都与map相同，遍历时每一个entry内容是value。
+`Set`只允许存在不同的值，和数学上的集合是一个概念，里面内容可以是`number`也可以是`object`或`function`，除了 set 换成 add 外其他的都与 map 相同，遍历时每一个 entry 内容是 value。
 
 ### WeakMap and WeakSet collections
 
 顾名思义，`WeakMap`和`WeakSet`是`Map`和`Set`弱化后的原型，但是这其中并无优劣之分，只是适用于不同的场合。
 
-`WeakMap`的**key**只能是非空对象，对**key**仅保持弱引用，最大的好处是可以避免内存泄漏，一旦**key**的引用为空或者undefined，垃圾回收器就可以回收这个对象，但是`WeakMap`不能迭代遍历。
+`WeakMap`的**key**只能是非空对象，对**key**仅保持弱引用，最大的好处是可以避免内存泄漏，一旦**key**的引用为空或者 undefined，垃圾回收器就可以回收这个对象，但是`WeakMap`不能迭代遍历。
 
 `WeakSet`与`WeakMap`同。
 
@@ -262,7 +262,7 @@ const tests = new Map();
 
 使用`代替双引号和单引号，在字符串中可以使用表达式${expression}，可以换行。
 
-### ES6其他语法
+### ES6 其他语法
 
 * [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)(稍后会详细讲到)
 * [函数默认参数](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Default_parameters)
@@ -276,6 +276,114 @@ const tests = new Map();
 
 ## The reactor pattern
 
----
+`reactor`模式是 `Node.js` 异步的核心。
 
-未完待续
+### I/O is slow(I/O 操作是慢的)
+
+I/O 操作可以说是计算机操作中最慢的一环，I/O 的速度可能和网络速度、磁盘速率有关，也可能和其他因素有关，比如用户点击事件等等。
+
+### Blocking I/O(阻塞 I/O)
+
+传统的阻塞 I/O 模型中，I/O 请求会阻塞之后代码块的运行，例如：
+
+```js
+// 直到请求完成，数据可用，线程都是阻塞的
+data = socket.read()
+// 请求完成，数据可用
+print(data)
+```
+
+而为了达到并发的  目的，传统的 web 服务器是  选择新开一个线程或进程，这样因为线程(或进程)之间的相互独立性，一个线程(或进程)阻塞并不会影响另一个。
+
+但是创建一个线程是昂贵的，一个线程需要内存，而且切换线程需要保留线程的上下文等等，所以这种方式并不是最佳实践。
+
+### Non-blocking I/O(非阻塞 I/O)
+
+与阻塞 I/O 相反，遇到 I/O 请求不会阻塞后续代码的执行，如果访问的资源不可用则会返回一个预定义的常量值。
+
+非阻塞 I/O 最基本的模式是轮询直到有数据已经返回了，也叫做 `忙等待`模式：
+
+```js
+resources = [socketA, socketB, pipeA]
+while (!resources.isEmpty()) {
+  for (i = 0; i < resources.length; i++) {
+    resource = resources[i]
+    // 进行读操作
+    let data = resource.read()
+    if (data === NO_DATA_AVAILABLE) {
+      // 此时还没有数据
+      continue
+    }
+    if (data === RESOURCE_CLOSED) {
+      // 资源被释放，从队列中移除该链接
+      resources.remove(i)
+    } else {
+      consumeData(data)
+    }
+  }
+}
+```
+
+这个例子已经能有单线程处理多个请求了， 但是不够高效，资源不可用时循环占了太多了 CPU 时间，轮询算法  浪费 CPU 时间。
+
+### Event demultiplexing(事件多路复用)
+
+对于获取非阻塞的资源而言，忙等待模型不是一个理想的技术，大多数现代的操作系统都提供了一种机制来处理并发和非阻塞资源，这个机制被称为`同步多路复用`。
+
+这个组件从一系列被监听的资源中收集 I/O 事件并放入队列中，而且会一直处于阻塞状态直到有新的事件可以被处理：
+
+```js
+socketA, pipeB;
+wachedList.add(socketA, FOR_READ);
+wachedList.add(pipeB, FOR_READ);
+while(events = demultiplexer.watch(wachedList)) {
+  // 事件循环
+  foreach(event in events) {
+    // 永远不会阻塞，并且总会有返回值
+    data = event.resource.read();
+    if (data === RESOURCE_CLOSED) {
+      // 资源已经被释放，从观察者队列移除
+      demultiplexer.unwatch(event.resource);
+    } else {
+      // 获得数据进行处理
+      consumeData(data);
+    }
+  }
+}
+```
+
+代码的三个重要步骤：
+
+1.  资源被添加到一个数据结构中，为每个资源关联一个特定的操作，在这个例子中是 read。
+2.  事件通知器由一组被观察的资源组成，事件通知器是同步和阻塞的直到有资源可以被`read`，事件触发后会从调用中返回，之后这些事件可以被处理。
+3.  多路复用器返回的每个事件被处理，此时，和事件相关的资源都可用且不会在操作中阻塞。当所有的事件都被处理完后，继续进入循环等待下一个可以被处理的事件。这个被称作为`事件循环`。
+
+![多路复用](/assets/img/node_demultiplexer.png)
+
+上图帮助我们理解如何在一个单线程中使用多路复用器和非阻塞 I/O 来处理并发。我们能够看到，只使用一个线程并不会影响我们处理多个 I/O 任务的性能。同时，我们看到任务是在单个线程中随着时间的推移而展开的，而不是分散在多个线程中。我们看到，在单线程中传播的任务相对于多线程中传播的任务反而节约了线程的总体空闲时间，并且更利于程序员编写代码。
+
+### Introducing to reactor pattern(reactor 模式的介绍)
+
+主要思想就是每一个 I/O 操作都有一个`handler`或者成为回调函数(`callback`)，当事件发生并且被`事件循环`处理后，这个回调函数就会被调用：
+
+![event loop](/assets/img/event_loop.png)
+
+一个应用使用`reactor`模式后：
+
+1.  应用提交一个请求给事件多路复用器 ，生成 I/O 操作，同时提供事件触发时的`handler`， 发送请求给事件多路复用器是一个非阻塞的操作，发送后立即返回到应用。
+2.  当一组 I/O 操作完成，事件多路复用器会将新来的事件添加到事件队列中。
+3.  此时，事件循环会迭代事件队列中的每个事件。
+4.  对于每个事件，对应的`handler`被处理。
+5.  `handler`，是应用程序代码的一部分，`handler`执行结束后执行权会交回事件循环。但是，在`handler`执行时可能请求新的异步操作，从而新的操作被添加到事件多路复用器。
+6.  当事件队列的全部事件被处理完后，事件多路复用器再次阻塞直到有一个新的事件触发。
+
+现在来定义 Node.js 的核心模式：  
+`模式(reactor)`这样处理 I/O，阻塞直到有新的事件从被观察的资源中触发，然后将事件派发给相应的`handler`。
+
+### Node.js 非阻塞 I/O 引擎——libuv
+
+每个操作系统都有不同的接口来实现事件多路复用器，Linux 是 epoll，Mac OSX 是 kqueue，Windows 的 IOCP API，即使是在相同的操作系统中对于不同资源的I/O操作也不同，所以Node.js使用`libuv`来统一处理I/O操作，来达到兼容不同操作系统的目的。
+
+### Node.js 架构
+
+![Node.js 架构](/assets/img/node_architecture.png)
