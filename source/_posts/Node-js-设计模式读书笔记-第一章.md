@@ -324,7 +324,7 @@ while (!resources.isEmpty()) {
 }
 ```
 
-这个例子已经能有单线程处理多个请求了， 但是不够高效，资源不可用时循环占了太多了 CPU 时间，轮询算法  浪费 CPU 时间。
+这个例子已经能有单线程处理多个请求了， 但是不够高效，资源不可用时循环占了太多了 CPU 时间，轮询算法浪费 CPU 时间。
 
 ### Event demultiplexing(事件多路复用)
 
@@ -356,7 +356,7 @@ while(events = demultiplexer.watch(wachedList)) {
 
 1.  资源被添加到一个数据结构中，为每个资源关联一个特定的操作，在这个例子中是 read。
 2.  事件通知器由一组被观察的资源组成，事件通知器是同步和阻塞的直到有资源可以被`read`，事件触发后会从调用中返回，之后这些事件可以被处理。
-3.  多路复用器返回的每个事件被处理，此时，和事件相关的资源都可用且不会在操作中阻塞。当所有的事件都被处理完后，继续进入循环等待下一个可以被处理的事件。这个被称作为`事件循环`。
+3.  多路复用器返回的每个事件被处理，此时，和事件相关的资源都可用且不会在操作中阻塞。当所有的事件都被处理完后，继续进入循环等待下一个可以被处理的事件。这个被称作为`事件循环(event loop)`。
 
 ![多路复用](/assets/img/node_demultiplexer.png)
 
@@ -382,7 +382,7 @@ while(events = demultiplexer.watch(wachedList)) {
 
 ### Node.js 非阻塞 I/O 引擎——libuv
 
-每个操作系统都有不同的接口来实现事件多路复用器，Linux 是 epoll，Mac OSX 是 kqueue，Windows 的 IOCP API，即使是在相同的操作系统中对于不同资源的I/O操作也不同，所以Node.js使用`libuv`来统一处理I/O操作，来达到兼容不同操作系统的目的。
+每个操作系统都有不同的接口来实现事件多路复用器，Linux 是 epoll，Mac OSX 是 kqueue，Windows 的 IOCP API，即使是在相同的操作系统中对于不同资源的 I/O 操作也不同，所以 Node.js 使用`libuv`来统一处理 I/O 操作，来达到兼容不同操作系统的目的。
 
 ### Node.js 架构
 
