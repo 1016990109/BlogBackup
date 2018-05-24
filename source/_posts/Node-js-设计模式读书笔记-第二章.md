@@ -238,16 +238,16 @@ function readJSON(filename, callback) {
 在异步回调过程中，错误是难以被捕获的，例如：
 
 ```js
-const fs = require('fs');
+const fs = require('fs')
 
 function readJSONThrows(filename, callback) {
   fs.readFile(filename, 'utf8', (err, data) => {
     if (err) {
-      return callback(err);
+      return callback(err)
     }
-    callback(null, JSON.parse(data));
-  });
-};
+    callback(null, JSON.parse(data))
+  })
+}
 ```
 
 在上面的函数中，如果`JSON.parse(data)`异常的话是没有办法捕获的：
@@ -255,31 +255,107 @@ function readJSONThrows(filename, callback) {
 ```js
 try {
   readJSONThrows('nonJSON.txt', function(err, result) {
-    // ... 
-  });
+    // ...
+  })
 } catch (err) {
-  console.log('This will not catch the JSON parsing exception');
+  console.log('This will not catch the JSON parsing exception')
 }
 ```
 
-上面`catch`语句将捕获不到错误，因为错误是在回调函数中产生的。然而，我们仍然有机会在应用程序终止之前执行一些清理或日志记录。事实上，当这种情况发生时，Node.js会在退出进程之前发出一个名为`uncaughtException`的特殊事件：
+上面`catch`语句将捕获不到错误，因为错误是在回调函数中产生的。然而，我们仍然有机会在应用程序终止之前执行一些清理或日志记录。事实上，当这种情况发生时，Node.js 会在退出进程之前发出一个名为`uncaughtException`的特殊事件：
 
 ```js
-process.on('uncaughtException', (err) => {
-  console.error('This will catch at last the ' +
-    'JSON parsing exception: ' + err.message);
+process.on('uncaughtException', err => {
+  console.error(
+    'This will catch at last the ' + 'JSON parsing exception: ' + err.message
+  )
   // Terminates the application with 1 (error) as exit code:
   // without the following line, the application would continue
-  process.exit(1);
-});
+  process.exit(1)
+})
 ```
 
-需要注意的是，`uncaughtException`会使得应用处于一个不能保证一致的状态，而这可能导致不可预见的错误。比如还有未完成的I/O请求正在运行或关闭，这可能导致不一致。所以建议，尤其是在生产环境，在收到任何`uncaught exception`之后停止应用的运行。
+需要注意的是，`uncaughtException`会使得应用处于一个不能保证一致的状态 ，而这可能导致不可预见的错误。比如还有未完成的 I/O 请求正在运行或关闭，这可能导致不一致。所以建议，尤其是在生产环境，在  收到任何`uncaught exception`之后停止应用的运行。
 
 ### The module system and its patterns(模块系统和其中的模式)
 
 模块可以隐藏不想暴露的函数、变量，是构成大型应用的基础。
 
-#### The revealing module pattern
+#### The revealing module pattern(模块模式)
+
+`JavaScript` 是没有命名空间的，在全局范围内运行的程序会污染全局命名空间，造成相关变量、数据、方法名的冲突。解决该问题的一个比较流行的做法是使用 `模块模式`:
+
+```js
+const module = (() => {
+  const privateFoo = () => {
+    // ...
+  };
+  const privateBar = [];
+  const exported = {
+    publicFoo: () => {
+      // ...
+    },
+    publicBar: () => {
+      // ...
+    }
+  };
+  return exported;
+})();
+console.log(module);
+```
+
+该模式利用自执行函数创建私有空间，只导出需要暴露的部分，前面的代码中， `module` 变量只包含了暴露的 `API`，而内部的其他部分是外面访问不到的。这个模式背后的思想就是用来构建 `Node.js` 模块系统的基础。
+
+#### Node.js modules explained(Node.js 模块解释)
+
+`CommonJS` 是一个旨在规范 `JavaScript` 生态系统的组织，他们提出了 `CommonJS模块规范`。`Node.js` 在此规范之上构建了其模块系统，并添加了一些自定义的扩展。每个模块都在自己的私有空间下运行，所以在模块内定义的本地变量不会污染全局变量。
+
+##### A homemade module loader(自定义模块加载器)
+
+为了解释加载器是如何工作的，先简单勾勒一个类似的系统，下面的代码模仿了内部函数 `require()` 的一部分功能：
+
+```js
+function loadModule(filename, module, require) {
+  const wrappedSrc = `(function(module, exports, require) {
+         ${fs.readFileSync(filename, 'utf8')}
+       })(module, module.exports, require);`;
+  eval(wrappedSrc);
+}
+```
+
+模块的源码被包装入一个函数，并且是使用模块模式的。区别在于传递了一些参数到模块中，实际上就是 `module`, `exports`, `require`。`exports` 参数被初始化为 `module.exports`。
+
+>注意：上面只是个示例，其实很少使用 `eval` 来执行源码，这可能导致注入攻击，使用 `eval` 要十分谨慎。
+
+现在通过实现 `require()` 函数来看看这都些变量中的包含了什么内容：
+
+```js
+const require = (moduleName) => {
+  console.log(`Require invoked for module: ${moduleName}`);
+  const id = require.resolve(moduleName);
+  if (require.cache[id]) {
+    return require.cache[id].exports;
+  }
+  //模块元数据
+  const module = {
+    exports: {},
+    id: id
+  };
+  //更新缓存
+  require.cache[id] = module;
+  //加载模块
+  loadModule(id, module, require);
+  //返回导出的变量
+  return module.exports;
+};
+require.cache = {};
+require.resolve = (moduleName) => {
+  /* 通过模块名作为参数resolve一个完整的模块 */
+};
+```
+
+上面函数模拟了原生 `require()` 函数，并不能准确完美地反应真实的行为，但是却能帮助我们理解一个模块是怎么被定义和加载的：
+
+1. 
 
 未完待续...
