@@ -5,6 +5,7 @@ title: "相册"
 noDate: "true"
 ---
 
+<link href="/css/instagram.css" rel="stylesheet">
 <link  href="/fancybox/jquery.fancybox.css" rel="stylesheet">
 <script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
 <script src="/js/jquery.lazyload.js"></script>
