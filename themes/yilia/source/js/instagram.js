@@ -129,7 +129,7 @@ var Instagram = (function(){
 				return;
 			}
 			// https://api.instagram.com/oauth/authorize/?client_id=5c9e4068f0c8461bab7b23809c1cd923&redirect_uri=http://1016990109.github.io&response_type=code
-			getList("https://api.instagram.com/v1/users/"+ userId +"/media/recent/?access_token=3252885684.5c9e406.460d35f13c374a28bfc0ae0e05f9d24b&count=100");
+			getList("https://api.instagram.com/v1/users/"+ userId +"/media/recent/?access_token=3252885684.5c9e406.67bb02e9fd7b4693ac876827a21be6ea&count=100");
 			bind();
 		}
 	}

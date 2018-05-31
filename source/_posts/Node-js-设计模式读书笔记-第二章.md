@@ -275,7 +275,7 @@ process.on('uncaughtException', err => {
 })
 ```
 
-需要注意的是，`uncaughtException`会使得应用处于一个不能保证一致的状态 ，而这可能导致不可预见的错误。比如还有未完成的 I/O 请求正在运行或关闭，这可能导致不一致。所以建议，尤其是在生产环境，在  收到任何`uncaught exception`之后停止应用的运行。
+需要注意的是，`uncaughtException`会使得应用处于一个不能保证一致的状态 ，而这可能导致不可预见的错误。比如还有未完成的 I/O 请求正在运行或关闭，这可能导致不一致。所以建议，尤其是在生产环境，在收到任何`uncaught exception`之后停止应用的运行。
 
 ### The module system and its patterns(模块系统和其中的模式)
 
@@ -356,6 +356,128 @@ require.resolve = (moduleName) => {
 
 上面函数模拟了原生 `require()` 函数，并不能准确完美地反应真实的行为，但是却能帮助我们理解一个模块是怎么被定义和加载的：
 
-1. 
+1. 一个模块的名字作为输入被接收，我们需要做的第一件事就是找到这个模块的路径(我们称之为`id`)，这个依靠 `require.resolve()`来完成。
+2. 如果模块过去被加载过，那它应该存在于缓存。这种情况下我们直接返回就行。
+3. 如果模块尚未加载，我们将初始化首次加载模块环境。具体来说就是，创建一个模块(`module`)对象，其中包含一个 `exports` (被初始化为空的对象字面量`{}`)属性。该属性将被模块的代码用于导出模块的公共 `API`。
+4. 模块被缓存。
+5. 像前面所看到的一样，源代码从文件中被加载，接着被执行。我们给模块提供一个刚才创建的 `module` 对象和一个 `require()` 函数的引用。模块通过修改或替换 `module.exports` 来提供公共 `API`。
+6. 最后，包含公共 `API` 的 `module.exports` 返回给调用者。
 
+##### Defining a module(定义一个模块)
+
+让我们看看怎么定义一个模块：
+
+```js
+//加载另一个依赖
+const dependency = require('./anotherModule');
+//一个私有函数
+function log() {
+  console.log(`Well done ${dependency.username}`);
+}
+//API 被导出给外部用
+module.exports.run = () => {
+  log(); 
+};
+```
+
+除了 `module.exports` 的内容其他都是私有的，当模块被加载的时候这个变量的内容被返回且被缓存。
+
+##### Defining globals(定义全局内容)
+
+即使在模块中声明的所有变量和函数都在其本地范围内定义，仍然可以定义全局变量。事实上，模块系统公开了一个名为 `global` 的特殊变量。分配给此变量的所有内容将会被定义到全局环境下。
+
+>注意：污染全局变量是不好的，模块化的优势就不在了，所以只有当你真的需要用的时候再用吧！
+
+##### module.exports vs exports
+
+`exports` 只是 `module.exports` 的一个引用，所以在 `exports` 中添加新属性是有效的，能更新 `module.exports` 的内容，而对 `exports` 重新赋值则不会更新 `module.exports`，只是让 `exports` 指向了另一个对象；但是对 `module.exports` 重新赋值就是实实在在地更改了 `module` 了，是能起作用的。
+
+```js
+//有效
+exports.foo = () => {console.log("hello")}
+
+//无效
+exports = {
+  foo: () => {
+    console.log("hello")
+  }
+}
+
+//有效
+module.exports = {
+  foo: () => {
+    console.log("hello")
+  }
+}
+```
+
+##### The require function is synchronous(require函数是同步的)
+
+原生的 `require()` 函数也是同步的，所以对 `module.exports` 的赋值操作也是要同步的。下面这种代码就是错误的：
+
+```js
+setTimeout(() => {
+  module.exports = function() {
+    // ...
+  };
+}, 100);
+```
+
+这就限制了我们绝大多数情况下都是使用同步的代码定义模块，这就是 `Node.js` 核心库为一些异步函数提供可选的同步的 `API` 的原因。
+
+如果需要在模块初始化过程中使用异步方法，那么可以返回一个未初始化的模块，让使用者之后去初始化这个模块，这就导致了 `require` 不能保证模块被立即使用。
+
+出于好奇，你可能想知道为什么 `Node.js` 早期是有异步的 `require()` 函数后来又被移除了，这是因为在初始化的过程中处理异步的I/O带来的复杂性比优势大太多了。
+
+##### The resolve algorithm(resolve算法)
+
+为了解决[依赖地狱](https://zh.wikipedia.org/wiki/相依性地狱)问题，`Node.js` 根据模块的被加载的位置来加载不同版本的模块，这些理念也被运用到 `npm` 和 `require` 的 `resolve` 算法中。
+
+`resolve()` 接收 `moduleName` 作为参数，并返回模块的完整路径。
+
+`resolve` 算法的三个主要分支：
+
+1. **File modules**(文件模块)：模块名是 `/` 开头认为是绝对路径，以 `./` 开头则认为是相对当前使用 `require` 的模块的路径。
+2. **Core modules**(核心模块)：模块名不以 `/` 或 `./` 开头则优先从核心库开始查找。
+3. **Package modules**(包模块)：核心库没有查找到时，再从当前目录的 `node_modules` 中查找相应的模块，没有则继续往上层的 `node_modules` 中找直到系统的根目录。
+
+对于文件和包模块，单个文件和目录也可以匹配到 `moduleName`。特别地，算法将尝试匹配以下内容：
+
+* `<moduleName>.js`
+* `<moduleName>/index.js`
+* 在`<moduleName>/package.json` 的 `main` 值下声明的文件或目录
+
+更详尽的 `resolve` 算法请看[这里](https://nodejs.org/api/modules.html#modules_all_together)。
+
+`node_modules` 目录实际上是 `npm` 安装每个包并存放相关依赖关系的地方：
+
+```
+myApp
+├── foo.js
+└── node_modules
+    ├── depA
+    │   └── index.js
+    └── depB
+        │
+        ├── bar.js
+        ├── node_modules
+        ├── depA
+        │    └── index.js
+        └── depC
+             ├── foobar.js
+             └── node_modules
+                 └── depA
+                     └── index.js
+```
+
+可以发现 `depA`, `depB`, `depC` 都有它们自己的依赖，所以同样使用 `require('depA')`，在不同的地方加载就会加载不同的模块，如：
+
+* 在 `/myApp/foo.js` 中调用的 `require('depA')` 会加载 `/myApp/node_modules/depA/index.js`
+* 在 `/myApp/node_modules/depC/foobar.js` 中调用的 `require('depA')` 会加载 `/myApp/node_modules/depC/node_modules/depA/index.js`
+
+`resolve` 算法是 `Node.js` 依赖关系管理的核心部分，它的存在使得即便应用程序拥有成百上千包的情况下也不会出现冲突和版本不兼容的问题。
+
+当我们调用 `require()` 时，解析算法对我们是透明的。然而，仍然可以在任何模块中通过调用 `require.resolve()` 使用该算法。
+
+##### The module cache(模块缓存)
 未完待续...
