@@ -370,48 +370,19 @@ public class XxxProtocolWrapper implemenets Protocol {
 
 #### 编码与解码(序列化与反序列化)
 
-`Dubbo` 默认是使用 `Hessian` 作为序列化与反序列化的工具的：
+想要远程传输对象就得将对象变为二进制码，这就需要序列化工具来完成这些操作。
 
-```java
-@SPI("hessian2")
-public interface Serialization {
+在 `Dubbo`中，同时支持多种序列化方式，例如：
 
-    /**
-     * get content type id
-     *
-     * @return content type id
-     */
-    byte getContentTypeId();
+1. `dubbo` 序列化：阿里尚未开发成熟的高效 `java` 序列化实现，阿里不建议在生产环境使用它
+2. `hessian2` 序列化：`hessian` 是一种跨语言的高效二进制序列化方式。
+3. `json` 序列化：目前有两种实现，一种是采用的阿里的 `fastjson` 库，另一种是采用 `Dubbo` 中自己实现的简单 `json` 库，但其实现都不是特别成熟，而且 `json` 这种文本序列化性能一般不如上面两种二进制序列化。
+4. `java` 序列化：主要是采用 `JDK` 自带的 `Java` 序列化实现，性能很不理想。
 
-    /**
-     * get content type
-     *
-     * @return content type
-     */
-    String getContentType();
+`Dubbo` 默认是使用 `Hessian` 作为序列化与反序列化的工具的，`Hessian` 的序列化语法看[这里](http://hessian.caucho.com/doc/hessian-serialization.html)。
 
-    /**
-     * create serializer
-     *
-     * @param url
-     * @param output
-     * @return serializer
-     * @throws IOException
-     */
-    @Adaptive
-    ObjectOutput serialize(URL url, OutputStream output) throws IOException;
+**与跨平台的 `protobuf` 对比：**
 
-    /**
-     * create deserializer
-     *
-     * @param url
-     * @param input
-     * @return deserializer
-     * @throws IOException
-     */
-    @Adaptive
-    ObjectInput deserialize(URL url, InputStream input) throws IOException;
-
-}
-```
-
+1. `protobuf` 相比于 `hessian` 而言是要定义消息类型的，客户端与服务器都需要定义相同的消息类型(`.proto`文件)，配置方面较复杂，但是相应的消息的压缩率也就更高了，`protobuf` 存储类型只需要一个字节(8位)，即前5位代表顺序，后3位代表 `type`，更具体的 `protobuf` 的编码规则请看[官方文档](https://developers.google.com/protocol-buffers/docs/encoding)；而 `hessian` 则会把类型的全量名称都加上，因而效率会稍微低一点，具体的 `hessian` 编码规则请看[官方文档](http://hessian.caucho.com/doc/hessian-serialization.html)。所以如果对性能要求不是特别高(如即时消息系统，如QQ等)，而且是使用 `java` 编写的系统而言，用 `hessian` 就足够了，这就是 `Dubbo` 默认使用 `hessian` 的原因吧。
+2. `hessian` 一般是用于 `java` 平台的，`protobuf` 是跨平台的。
+3. `protobuf` 比 `hessian` 压缩率、速率更高。
