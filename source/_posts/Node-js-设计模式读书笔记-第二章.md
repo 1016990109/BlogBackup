@@ -902,7 +902,7 @@ function helloCallback(callback) {
 
 ##### Combining callbacks and EventEmitter(结合回调和 EventEmitter)
 
-某些场景下我们需要结合 `callbacks` 和 `EventEmitter` 来使用，这种模式在某种场景下是非常有用的：通过导出一个传统的异步函数作为主功能来实现最小接口原则，但同时通过返回 `EventEmitter` 提供更丰富的功能和控制。使用该模式的一个例子是 [node-glob](https://www.npmjs.com/package/glob)模块，模块的主入口是它导出的一个函数：
+某些场景下我们需要结合 `callbacks` 和 `EventEmitter` 来使用，这种模式在某种场景下是非常有用的：通过导出一个传统的异步函数作为主功能来实现最小接口原则，但同时通过返回 `EventEmitter` 提供更丰富的功能和控制。使用该模式的一个例子是 [node-glob](https://www.npmjs.com/package/glob) 模块，模块的主入口是它导出的一个函数：
 
 ```js
 glob(pattern, [options], callback)
