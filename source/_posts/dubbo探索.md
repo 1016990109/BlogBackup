@@ -364,7 +364,7 @@ public class XxxProtocolWrapper implemenets Protocol {
 
 `ChannelPipeline` 处理过程类似下面这样，一般会有 `decode`，用户自定义的 `handler`，和 `encode`：
 
-![netty pipelin](/assets/img/netty_pipeline.png)
+![netty pipeline](/assets/img/netty_pipeline.png)
 
 `ChannelInBoundHandler` 对从客户端发往服务器的报文进行处理，一般用来执行拆包/粘包，解码，读取数据，业务处理等；`ChannelOutBoundHandler` 对从服务器发往客户端的报文进行处理，一般用来进行编码，发送报文到客户端。
 
