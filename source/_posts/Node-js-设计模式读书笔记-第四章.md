@@ -79,7 +79,7 @@ module.exports.promisify = function(callbackBasedApi) {
 
 ```js
 const promisify = require('./promisify').promisify
-promisify((input, callback) => {
+let newCallbackBaseApi = promisify((input, callback) => {
   setTimeout(() => callback(null, input + 1), 100)
 })
 
