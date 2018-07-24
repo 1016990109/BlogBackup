@@ -652,4 +652,359 @@ module.exports = options => {
 
 ## Template(模板模式)
 
+和策略模式差不多，只是需要预先定义变体，使用继承改变原有的方法，注意在 `js` 中模板类是总是抛出异常的类或未定义的方法(因为一定要有实现类才能使用)。
 
+![Template](/assets/img/template.png)
+
+### In the wild
+
+其实在第五章中流的实现就是用了这种模式，自定义的流需要实现 `_read` 和 `_write` 这类的方法。
+
+## Middleware(中间件模式)
+
+### Middleware in Express(Express 中的中间件)
+
+在 `Express` 中，中间件表示一组服务，通常是函数，它们被组织在一个 `pipeline` 中，负责处理传入的 `HTTP` 请求和进行响应。
+
+一个 `Express` 的中间件有下面这种形式：
+
+```js
+function(req, res, next) { ... }
+```
+
+在这里，`req` 是传入的 `HTTP` 请求，`res` 是响应，`next` 是当前中间件完成其任务时调用的回调，用来触发 `pipeline` 中的下一个中间件。可能的 `Express` 中间件任务有:
+
+- 解析请求的 `body`
+- 压缩/解压 `req` 和 `res` 对象
+- 生成访问日志
+- 管理 `sessions`
+- 管理加密的 `cookie`
+- 提供跨站请求伪造（`CSRF`）保护
+
+这些都是与应用程序的主要业务逻辑没有严格关联的任务，也不是 Web 服务器最核心的部分；它们是应用程序公共功能的中间件，使得实际的请求处理程序只关注其主要业务逻辑。
+
+### Middleware as a pattern(中间件作为一种模式)
+
+其实类似于 `Pipe-Filter` 模式，通过看一张图更能明白：
+
+![Middleware](/assets/img/middleware.png)
+
+最重要的就是这个 `Middleware Manager`，负责组织和执行中间件功能。
+
+1.  新的中间件通过 `use()`(一般约定，当然也可以用别的名称) 来注册，一般是管道末尾。
+2.  注册的中间件在异步顺序执行流中被调用，后一个的输入是前一个中间件的输出。
+3.  中间件只负责处理正常流程，错误通常会触发另一个专门的中间件序列。
+
+### Creating a middleware for ØMQ(为 ØMQ 创建一个中间件框架)
+
+`ØMQ`（也称为 `ZMQ` 或 `ZeroMQ`）提供了一个简单的接口，用于通过各种协议在网络中交换原子消息；它的性能绝佳，其基本的抽象集是专门构建的，以促进自定义消息体系结构的实现。因此，经常选择 `ØMQ` 来构建复杂的分布式系统。
+
+我们将构建一个中间件基础结构，以抽象通过 `ØMQ` 套接字传递的数据的预处理和后处理，以便我们可以透明地处理 `JSON` 对象，同时无缝地压缩通过线路传递的消息。
+
+#### The Middleware Manager(中间件管理器)
+
+```js
+module.exports = class ZmqMiddlewareManager {
+  constructor(socket) {
+    this.socket = socket
+    this.inboundMiddleware = [] // [1]
+    this.outboundMiddleware = []
+    socket.on('message', message => {
+      // [2]
+      this.executeMiddleware(this.inboundMiddleware, {
+        data: message
+      })
+    })
+  }
+
+  send(data) {
+    const message = {
+      data: data
+    }
+
+    this.executeMiddleware(this.outboundMiddleware, message, () => {
+      this.socket.send(message.data)
+    })
+  }
+
+  use(middleware) {
+    if (middleware.inbound) {
+      this.inboundMiddleware.push(middleware.inbound)
+    }
+    if (middleware.outbound) {
+      this.outboundMiddleware.unshift(middleware.outbound)
+    }
+  }
+
+  executeMiddleware(middleware, arg, finish) {
+    function iterator(index) {
+      if (index === middleware.length) {
+        return finish && finish()
+      }
+      middleware[index].call(this, arg, err => {
+        if (err) {
+          // 这里本应该有对应的错误中间件去处理，为了简洁直接输出
+          return console.log('There was an error: ' + err.message)
+        }
+        // 一个中间件处理完参数后，传递给下一个中间件
+        iterator.call(this, ++index)
+      })
+    }
+
+    iterator.call(this, 0)
+  }
+}
+```
+
+管理器接收 `ØMQ` 套接字作为参数，定义一个近站中间件列表和一个出站中间件列表，当有消息来时依次调用进站中间件(按照 `use` 的顺序来)，需要发送消息时就依次调用出站中间件，被处理后的参数也是一一传播。
+
+#### A middleware to support JSON messages(一个支持 JSON 消息的中间件)
+
+```js
+// file jsonMiddleware.js
+module.exports.json = () => {
+  return {
+    inbound: function(message, next) {
+      message.data = JSON.parse(message.data.toString())
+      next()
+    },
+    outbound: function(message, next) {
+      message.data = new Buffer(JSON.stringify(message.data))
+      next()
+    }
+  }
+}
+```
+
+想要使用的时候只需要 `use(jsonMiddleware)` 就行了，很方便。
+
+#### Using the ØMQ middleware framework(使用 ØMQ 中间件框架)
+
+##### The server
+
+```js
+const zmq = require('zmq')
+const ZmqMiddlewareManager = require('./zmqMiddlewareManager')
+const jsonMiddleware = require('./jsonMiddleware')
+const reply = zmq.socket('rep')
+reply.bind('tcp://127.0.0.1:5000')
+
+const zmqm = new ZmqMiddlewareManager(reply)
+zmqm.use(jsonMiddleware.json())
+```
+
+##### The client
+
+```js
+const zmq = require('zmq')
+const ZmqMiddlewareManager = require('./zmqMiddlewareManager')
+const jsonMiddleware = require('./jsonMiddleware')
+const request = zmq.socket('req')
+request.connect('tcp://127.0.0.1:5000')
+
+const zmqm = new ZmqMiddlewareManager(request)
+zmqm.use(jsonMiddleware.json())
+
+//处理服务器响应的中间件
+zmqm.use({
+  inbound: function(message, next) {
+    console.log('Echoed back: ', message.data)
+    next()
+  }
+})
+
+setInterval(() => {
+  zmqm.send({
+    action: 'ping',
+    echo: Date.now()
+  })
+}, 1000)
+```
+
+### Middleware using generators in Koa(在 Koa 中使用生成器中间件)
+
+`Koa` 不像 `Express` 一样使用回调函数来完成中间件模式，而是使用生成器(`generator`)，使用中间件包装核心应用程序，这种形式更像是洋葱一样：
+
+![Koa Middleware](/assets/img/koa_middleware.png)
+
+我们来看一个官方的例子(`ES7`)：
+
+```js
+const Koa = require('koa')
+const app = new Koa()
+
+// x-response-time
+
+app.use(async (ctx, next) => {
+  const start = Date.now()
+  await next()
+  const ms = Date.now() - start
+  ctx.set('X-Response-Time', `${ms}ms`)
+})
+
+// logger
+
+app.use(async (ctx, next) => {
+  const start = Date.now()
+  await next()
+  const ms = Date.now() - start
+  console.log(`${ctx.method} ${ctx.url} - ${ms}`)
+})
+
+// response
+
+app.use(async ctx => {
+  ctx.body = 'Hello World'
+})
+
+app.listen(3000)
+```
+
+可以发现 `response` 部分才是核心应用程序部分，只不过被其他的中间件包裹起来了，通过 `await` 分割。
+
+> 注意，现在 `Koa` 已经开始使用 `ES7` 的语法 `async`/`await` 了，详情查看[官方文档](https://koajs.com)。
+
+## Command(命令模式)
+
+可以认为一个命令(`Command`)是一个封装了重要的信息以便之后去执行一个特定的动作的对象。我们不直接在主体对象上调用一个方法或一个函数，而是创建一个对象来执行这样一次调用；而实现这个意图将是另一个组件的责任，该组件将意图转化为一系列操作。
+
+![Command](/assets/img/command.png)
+
+命令模式典型的架构：
+
+- `Command`:这是一个封装了足够的信息去调用方法或函数的对象，就像是定义了一个接口。
+- `Client`:创建命令对象并提供给调用者(`Invoker`)。
+- `Invoker`:负责执行目标(`Target`)上的命令，负责调用 `Command`。
+- `Target`(或 `Receiver`):调用的主体，它可以是一个对象上的单独的方法或函数。
+
+命令模式有点：
+
+- 命令可以稍后执行。
+- 命令可以被序列化并在网络上传输。这使得我们可以远程分配任务，通过浏览器传输命令给服务器，创建 `RPC` 系统等等。
+- 很容易记录操作历史。
+- 命令是数据同步和冲突解决某些算法的重要部分。
+- 定时执行的命令可以取消；命令也可以撤销(`undone`)。
+- 命令可以组合起来，用来创建原子事务或实现同时执行一些操作的机制。
+- 一组命令可以有不同的变化，例如可以删除、插入、分割等等。
+
+### A flexible pattern(一个灵活的模式)
+
+正如上面所说，命令模式可以有很多种实现方式，我们来看看其中几个。
+
+#### A task pattern(任务模式)
+
+最简单的方式就是创建一个闭包：
+
+```js
+function createTask(target, args) {
+  return () => {
+    target.apply(null, args)
+  }
+}
+```
+
+这种技术允许我们使用单独的组件来控制和调度任务的执行，这在本质上等同于命令模式的调用者(`Invoker`，其实是同时创建了命令(`Command`))。
+
+#### A more complex command(一个更复杂的命令)
+
+我们希望撤销和序列化。命令的目标(`Target`) 是一个负责发送状态更新的对象:
+
+```js
+const statusUpdateService = {
+  statusUpdates: {},
+  sendUpdate: function(status) {
+    console.log('Status sent: ' + status)
+    let id = Math.floor(Math.random() * 1000000)
+    statusUpdateService.statusUpdates[id] = status
+    return id
+  },
+  destroyUpdate: id => {
+    console.log('Status removed: ' + id)
+    delete statusUpdateService.statusUpdates[id]
+  }
+}
+```
+
+接着创建一个命令来新状态的发布：
+
+```js
+function createSendStatusCmd(service, status) {
+  let postId = null
+  const command = () => {
+    postId = service.sendUpdate(status)
+  }
+  command.undo = () => {
+    if (postId) {
+      service.destroyUpdate(postId)
+      postId = null
+    }
+  }
+  command.serialize = () => {
+    return {
+      type: 'status',
+      action: 'post',
+      status: status
+    }
+  }
+  return command
+}
+```
+
+`command` 本身是一个函数，使用目标的方法发送状态更新，附在上面的 `undo` 函数直接调用目标的 `destroyUpdate` 函数来完成命令撤销，`serialize` 函数构建了一个 `JSON` 对象记录执行命令所需要的重要信息。
+
+然后再来创建执行者 `Invoker`:
+
+```js
+class Invoker {
+  constructor() {
+    this.history = []
+  }
+  run(cmd) {
+    this.history.push(cmd)
+    cmd()
+    console.log('Command executed', cmd.serialize())
+  }
+}
+```
+
+执行者还可以做一些额外的操作，如记录命令的执行，远程调用，延迟执行命令，例如：
+
+```js
+class Invoker {
+  constructor() {
+    this.history = []
+  }
+  run(cmd) {
+    this.history.push(cmd)
+    cmd()
+    console.log('Command executed', cmd.serialize())
+  }
+  delay(cmd, delay) {
+    setTimeout(() => {
+      this.run(cmd)
+    }, delay)
+  }
+  runRemotely(cmd) {
+    request.post(
+      'http://localhost:3000/cmd',
+      {
+        json: cmd.serialize()
+      },
+      err => {
+        console.log('Command executed remotely', cmd.serialize())
+      }
+    )
+  }
+}
+```
+
+最后编写客户端(`Client`):
+
+```js
+const invoker = new Invoker()
+const command = createSendStatusCmd(statusUpdateService, 'HI!')
+invoker.run(command)
+invoker.runRemotely(command)
+```
+
+> 命令模式最好在需要一些复杂的代码来调用目标上的函数或方法时使用，不然只是简单地调用一个方法就显得非常多余了。
