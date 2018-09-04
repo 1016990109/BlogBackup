@@ -95,3 +95,26 @@ tags:
 4. 加载 `srcset` 列表中引用的最接近所选的槽大小的图像
 
 更加具体的使用方式可以查看 [响应式图片](https://developer.mozilla.org/zh-CN/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images)
+
+## HTML 与 XHTML 的区别
+
+`HTML`:
+
+- 元素不一定有起始的标签
+- 元素不一定有结束的标签
+- 空元素才可以自关闭，如 `br`、`img`
+- 标签和属性大小写**不敏感**
+- 属性可以不用双引号
+- 某些属性可以为空，如 `disabled`、`checked`
+- 特殊符号不需要转义
+- 文档必须包含 `HTML5` 的 `DOCTYPE`
+
+`XHTML`:
+
+- 所有元素都必须有起始标签
+- 非空元素如果有起始标签则必须同时有结束标签
+- 自关闭的元素一定要使用 `/>`
+- 属性大小写敏感，一般来说都是小写
+- 属性必须使用双引号引起来
+- 禁止空属性，必须有值，如 `checked="checked"`
+- 特殊符号需要转义
