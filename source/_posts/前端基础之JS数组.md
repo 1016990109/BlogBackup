@@ -9,10 +9,10 @@ tags:
 
 ## 基本用法
 
-1.  `push(val1,val2,...)`、`pop` 操作，增加和删除，后进先出。
-2.  `unshift(val1,val2,...)`、`shift()` 对应在开头添加元素和删除元素。
-3.  `splice(start,deleteCount,val1,val2,...)` 从开始位置删除一定数量的元素，并从这个位置插入新的元素。
-4.  `reverse()` 反向。
+1.  `push(val1,val2,...)`、`pop` 操作，增加和删除，后进先出。返回数组的长度、弹出的元素。
+2.  `unshift(val1,val2,...)`、`shift()` 对应在开头添加元素和删除元素。返回数组的长度、弹出的元素。
+3.  `splice(start,deleteCount,val1,val2,...)` 从开始位置删除一定数量的元素，并从这个位置插入新的元素。返回删除的数组。
+4.  `reverse()` 反向。返回数组本身。
 5.  `sort([orderfunction])` 排序。
 6.  `slice([start] [,end])` 返回子数组，拷贝后的，复制一个数组简单地 `slice()`。
 7.  `join(seperator)` 返回以 `seperator` 作为间隔的字符串，默认为 `,`。
