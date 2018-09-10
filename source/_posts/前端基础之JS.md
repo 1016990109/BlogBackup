@@ -153,3 +153,59 @@ console.log(input.value) // Hello
 console.log(input.getAttribute('value')) // Hello
 console.log(input.value) // Hello World!
 ```
+
+## load 事件和 DOMContentLoaded 事件
+
+当初始的 `HTML` 文档被完全加载和解析完成之后，`DOMContentLoaded` 事件被触发，而无需等待样式表、图像和子框架的完成加载。
+
+`window` 的 `load` 事件仅在 `DOM` 和所有相关资源全部完成加载后才会触发。
+
+## 严格模式
+
+在文件、脚本、函数的开头加上 `'use strict'` 来启用严格模式。
+
+严格模式特点：
+
+1. 全局变量需要显示声明，直接 `x = 1` 会报错。
+2. 禁止使用 `with` 语句，创建 `eval` 的作用域。
+3. 禁止 `this` 指向全局对象。
+4. 禁止在函数内部遍历调用栈，`fn.caller`、`fn.arguments` 都会报错，注意直接使用 `arguments` 是不会报错的。
+5. 禁止删除变量，除非 `configurable` 属性为 `true`。
+6. 对象不能有重名属性，函数不能有重名参数。
+7. 显示报错，比如删除不可删除变量、对只读属性赋值都会显示报错。
+8. 禁止八进制表示法。
+9. 不允许对 `arguments` 赋值，不跟踪 `arguments` 的变化，禁止使用 `arguments.callee`。
+10. 函数必须声明在顶层，也就是说不能在非函数的代码块中声明函数。
+11. 新增保留字，和 `ES6` 接轨，如 `implements`,`let`,`static` 等等。
+
+## 柯里化(curry)
+
+柯里化（`currying`）是一种模式，其中具有多个参数的函数被分解为多个函数，当被串联调用时，将一次一个地累积所有需要的参数。
+
+```js
+function curry(fn) {
+  //保留参数合并结果
+  let args = []
+
+  let curried = function() {
+    if (arguments.length === 0) {
+      return fn.apply(this, args)
+    } else {
+      args.push(...arguments)
+      return curried
+    }
+  }
+
+  return curried
+}
+
+let addCurry = curry(function() {
+  let sum = 0
+  for (let i in arguments) {
+    sum += arguments[i]
+  }
+  return sum
+})
+
+console.log(addCurry(1)(2)(3)(4)())//10
+```
