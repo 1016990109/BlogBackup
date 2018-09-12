@@ -56,6 +56,9 @@ console.log(str) // 123hello321
 如果 `PreferredType` 被标记为 `Number`，那么先是调用 `valueOf` 方法，如果返回值是原始值则结束；否则重新调用 `toString` 方法，如果是原始值则结束，不然就会抛出 `TypeError` 异常。
 如果 `PreferredType` 被标记为 `String`，那么先是调用 `toString` 方法，如果返回值是原始值则结束；否则重新调用 `valueOf` 方法，如果是原始值则结束，不然就会抛出 `TypeError` 异常。(两者相反)
 
+> `valueOf()`：返回最适合该对象类型的原始值；
+> `toString()`: 将该对象的原始值以字符串形式返回。
+
 > 没有 `PrefferedType` 时，按照下面规则：如果该对象为 `Date` 类型，则 `PreferredType` 被设置为 `String`；否则，`PreferredType` 被设置为 `Number`。
 
 **通过 ToNumber 将值转换为数字**
