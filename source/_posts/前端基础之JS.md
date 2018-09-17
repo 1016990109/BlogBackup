@@ -61,9 +61,11 @@ console.log(x) // 1
 
 一般有以下一种方式：
 
-- `typeof`，返回对象的基础数据类型(`boolean`,`number`,`string`,`object`,`undefined`,`function`, `es6` 的 `symbol`)是何种，小写。
+- `typeof`，返回对象的基础数据类型(除了 `null`，因为是 `Object` 类型；**多加一个 `function`**)(`boolean`,`number`,`string`,`object`,`undefined`,`function`, `es6` 的 `symbol`)是何种，小写。
 - `instanceof`，一般用来判断引用类型，不是所有浏览器都支持这个语法。
 - `Object.prototype.toString.call(object)`，**通用的方法**，返回 `[object + 类型]`，这里的类型首字母大写，如 `Object`。
+
+> 注意 `NaN` 是 `number` 类型，`null` 是 `Object` 类型。判断数组可以 `Array.isArray(arr)`，判断 `NaN` 可以 `isNaN(num)`。
 
 ## document.write
 
