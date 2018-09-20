@@ -8,7 +8,9 @@ tags:
 
 ## CSS 选择器的优先级
 
-内联样式 > `ID` 选择器 > 类选择器、属性选择器和伪类选择器(`:hover`,`:first-child` 之类) > 标签（类型）选择器和伪元素选择器(`::after`,`::first-letter`,`::selection`等等)
+内联样式 > `ID` 选择器 > 类选择器、属性选择器和伪类选择器(`:hover`,`:first-child`，`:after` 之类) > 标签（类型）选择器和伪元素选择器(`::after`,`::first-letter`,`::selection`等等)
+
+> `CSS2` 用的是 `:after`，而 `CSS3` 用的是 `::after`。
 
 相同则比较数量每一级的数量总和。
 
@@ -23,7 +25,9 @@ tags:
 
 ## Float 定位
 
-浮动（`float`）是 `CSS` 定位属性。浮动元素从网页的正常流动中移出，但是保持了部分的流动性，会影响其他元素的定位（比如文字会围绕着浮动元素）。这一点与绝对定位不同，绝对定位的元素完全从文档流中脱离。
+浮动（`float`）是 `CSS` 定位属性。浮动元素从网页的正常流动中移出，但是保持了部分的流动性，会影响其他元素的定位（**比如文字会围绕着浮动元素**）。这一点与绝对定位不同，绝对定位的元素完全从文档流中脱离。
+
+> 文字所在的行框并不会忽略已经脱离文档流的 `float` 元素，甚至会调整自己的行框宽度，给其让出空间，表现形式就是文字充满 `float` 元素的周围
 
 `CSS` 的 `clear` 属性通过使用 `left`、`right`、`both`，让该元素向下移动（清除浮动）到浮动元素下面。
 
@@ -88,7 +92,7 @@ tags:
 1. 内部的 `Box` 会在垂直方向，从顶部开始一个接一个地放置。
 2. `Box` 垂直方向的距离由 `margin` 决定。属于同一个 `BFC` 的两个相邻 `Box` 的 `margin` 会发生叠加。(用来解决边距叠加问题，给会重叠的元素加一个 `BFC` 的父元素，那么这个 `BFC` 块就不会和下一个元素的边距重叠了，**水平方向的 `margin` 是不会叠加的**)
 3. 每个元素的 `margin box` 的左边， 与包含块 `border box` 的左边相接触(对于从左往右的格式化，否则相反)。即使存在浮动也是如此。
-4. `BFC` 的区域不会与 `float box` 叠加。(解决布局问题，一个块元素与浮动块重叠了的问题)
+4. `BFC` 的区域不会与 `float box` 叠加，**就算这个 `float box` 不是和它同级的**。(解决布局问题，一个块元素与浮动块重叠了的问题)
 5. `BFC` 就是页面上的一个隔离的独立容器，容器里面的子元素不会影响到外面的元素，反之亦然。
 6. 计算 `BFC` 的高度时，浮动元素也参与计算。(经常用来解决浮动元素导致父元素坍塌的问题)
 
@@ -202,6 +206,71 @@ _上面是响应式设计，下面是自适应设计_ ![rwd-vs-adapt-example](/a
 
 ## translate vs postion absolute
 
-`translate(x, y)` 是 `transform` 的一个值。改变 `transform` 或 `opacity` 不会触发浏览器重新布局（`reflow`）或重绘（`repaint`），只会触发组合（`compositions`）。而改变绝对定位会触发重新布局，进而触发重绘和复合。`transform` 使浏览器为元素创建一个 `GPU` 图层，但改变绝对定位会使用到 `CPU。` 因此 `translate()` 更高效，可以缩短平滑动画的绘制时间。
+`translate(x, y)` 是 `transform` 的一个值。改变 `transform` 或 `opacity` 不会触发浏览器重新布局（`reflow`）或重绘（`repaint`），只会触发组合（`composite`）。而改变绝对定位会触发重新布局，进而触发重绘和复合。因此 `translate()` 更高效，可以缩短平滑动画的绘制时间。
 
 当使用 `translate()` 时，元素仍然占据其原始空间（有点像 `position：relative`），这与改变绝对定位不同。
+
+## translate3d vs translate
+
+只有 `Z` 轴上的变化才会产生新的合成层，`Z` 轴上设置 0 也是可以的，同时也会启用 `GPU` 加速，使用 `GPU` 来渲染该层。
+
+也就是说 `translate3d` 才会触发 `GPU` 加速，二维的 `translate` 是不会的。同理，`rotate3d` 与 `rotate`，`scale3d` 与 `scale` 等等也都是一样的，`3d` 会启用 `GPU` 加速。
+
+**但是需要注意的是，虽然 `2d` 不会触发 `GUP` 硬件加速也就是增加新的合成层，但是它和 `3d` 一样能跳过浏览器渲染的 `Layout` 和 `Paint` 步骤，而直接到 `Composite`(合成) 步骤，实际上是新增了一层渲染层，所以一定程度上渲染性能也有提升**。渲染步骤：`JS` -> `Style` -> `Layout` -> `Paint` -> `Composite`，关于 `CSS` 属性会触发哪个步骤可以查看 [CSS Triggers](https://csstriggers.com)。
+
+先有的渲染层才有合成层。
+
+关于合成层与渲染层、`GPU` 硬件加速可以看 [无线性能优化：Composite](http://taobaofed.org/blog/2016/04/25/performance-composite/)。
+
+> `GPU` 是使用浮点数运算的，故而如果对文字加速可能会导致文字模糊，故而慎用！启动 `GPU` 加速自然也会加大电能的消耗，所以只在必要的时候再启用。
+
+> 如何查看是否多了一层合成层(**注意不是渲染层**)，可以使用 `Chrome` 的 `Devtools` 来查看，选中更多种的 `Rendering` 选项，下面就有几个属性了：
+>
+> - `Paint flashing`:需要重绘的部分会高亮显示。
+> - `Layer borders`:显示层的边界，可以用来查看是否启用了 `GPU` 加速。
+> - `FPS meter`:启用 `FPS` 计量，可以在右上角看到当前页面的刷新帧率。
+> - `Scrolling performance issues`:会高亮可能影响滚动性能的元素。
+> - `Emulate CSS media`:强制使用打印或普通屏效果。
+>   更加详细的信息可以通过 `Layers` 来查看，还会告诉你产生合成层的原因。以前的 `Chrome` 版本还可以在 `Timeline` 中看到每一帧的合成层情况，现在被移动到 `Performance` 中了，需要点击到某一个具体帧，再 `show layers` 才能出现 `Layers` 的选项卡。
+
+## 垂直水平居中
+
+### 水平居中
+
+1. 行内元素居中
+   行内元素居中是只针对行内元素的，比如文本（`text`）、图片（`img`）、按钮等行内元素，可通过给父元素设置 `text-align:center` 来实现。
+2. 块状元素居中
+   定宽块状元素居中:设置“左右 margin”值为“auto”来实现居中。
+   不定宽块状元素居中:a. `dispaly:table` 再设置“左右 margin”为"auto"。b. `position: relative; left: 50%; transform: tranlateX(-50%)`。
+3. 通用：`flex` 布局。
+
+### 垂直居中
+
+1. 父元素高度确定，且子元素只有单行文本
+   设置子元素的 `line-height` 等于父元素的 `height` 值。
+2. 父元素高度确定，子元素有多行
+   设置父元素 `dispaly:table-cell`，再设置父元素的 `vertical-align:middle`。
+3. 绝对定位 + `translate`：`position: absolute; top: 50%; transform: translateY(-50%)`。
+4. 绝对定位 + `margin: auto`:子元素设置 `position: absolute`，把要垂直居中的元素相对于父元素绝对定位，`top` 和 `bottom` 设为相等的值，再设置 `margin: 0 auto`。
+5. `padding`: 父元素没有高度，且只有一个子元素，那么设置父元素上下 `padding` 相等就可以了。
+6. `flex` 布局。
+7. `vertical-align`: 让行内元素在块级元素中垂直居中可以使用 `vertical-align:middle` 来近似居中，如果需要绝对居中同时需要设置父元素的 `font-size` 为 0。
+
+> `vertical-align` 注意事项：默认情况图片是与父元素的基线对齐的，基线可以认为是英文 4 行线的第 3 行线，解决图片下方空白问题可以设置对齐方式除 `baseline` 之外的值，或者设置 `line-height` 或 `font-size` 为 0。字符有下沉特性(字符的中心比块的绝对中心稍微下移)，进行居中对齐时需要注意，居中元素的中线会与文字中线对齐，所以会稍微下移。
+
+> 一个没有内容的 `inline-block` 元素的基线是 `margin` 边的下边缘(是包含了 `margin` 空间的)。
+
+直接使用 `vertical-align:middle` 来居中(父元素不设置行高或者字体大小)的问题可以看下面这张图：
+
+![vertical-align](/assets/img/vertical-align.jpg)
+
+> `vertical-align` 的值查看 [我对 css-vertical-align 的一些理解与认识（一）](https://www.zhangxinxu.com/wordpress/2010/05/我对css-vertical-align的一些理解与认识（一）/)
+
+## 长宽比固定
+
+- 垂直方向的 `padding`
+  高度设置为 0，然后 `padding-top` 或者 `padding-bottom` 设置百分比(这个百分比是宽度的百分比)来达到长宽比固定的效果，不过子元素需要绝对定位，不然会被 `padding` 挤出容器外。
+- 视窗单位
+  `CSS` 新特性中提供了一种新的单位 `vw`。了解过这个单位的同学都知道，浏览器 `100vw` 表示的就是浏览器的视窗宽度(Viewport)。那么只要宽高设置好比例的 `vw` 就可以了。
+- `grid` 布局
+  不常用。

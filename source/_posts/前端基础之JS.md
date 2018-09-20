@@ -156,6 +156,8 @@ console.log(input.getAttribute('value')) // Hello
 console.log(input.value) // Hello World!
 ```
 
+> 注意，除了 `value property` 外(`setAttribute('value', [value])` 会影响 `input.value`，但是 `input.value = [valie]` 并不会更改 `attribute`)，其他的 `attribute` 或 `property` 更改的时候会同时改变另外一个。
+
 ## load 事件和 DOMContentLoaded 事件
 
 当初始的 `HTML` 文档被完全加载和解析完成之后，`DOMContentLoaded` 事件被触发，而无需等待样式表、图像和子框架的完成加载。
@@ -209,5 +211,37 @@ let addCurry = curry(function() {
   return sum
 })
 
-console.log(addCurry(1)(2)(3)(4)())//10
+console.log(addCurry(1)(2)(3)(4)()) //10
 ```
+
+## 页面的生命周期
+
+- `DOMContentLoaded`:所有 `HTML` 已经加载完，`DOM` 树也构建完，但是额外的资源还没有加载完，如 `CSS` 和图片。
+- `load`(`window.onload`):所有资源都加载完了
+- `beforeunload`/`unload`:用户离开页面
+
+例外：
+
+`script` 有 `src` 且有 `defer` 或者 `async` 属性的不一样。
+
+|                  | async                                                                  | defer                                                    |
+| ---------------- | ---------------------------------------------------------------------- | -------------------------------------------------------- |
+| 执行顺序         | 不阻塞渲染，一旦下载完立即执行，和在 `DOM` 中的顺序无关。              | 等待 `DOM` 解析完才执行，且执行顺序和 `DOM` 中顺序相同。 |
+| DOMContentLoaded | 可能发生在 `DOMContentLoaded` 之前，前提是文档够长，且脚本够小执行快。 | 要等到 `DOMContentLoaded` 结束才会执行。                 |
+
+## 事件委托
+
+事件委托就是将子元素的监听事件移动到父元素，这样只用添加一个监听，在子元素非常多的时候有用。
+
+**事件委托是发生在冒泡阶段的，不然捕获阶段是从外到内过程，这个时候拿不到子元素。**
+
+且监听的事件是存储在堆中的，**记得手动移除**！而内联的事件不用移除，因为节点移除之后绑定在上面的监听事件就没有引用持有了，垃圾回收时会将其回收。
+
+## 箭头函数与普通函数的不同
+
+- `this` 的指向为创建时上下文
+- 没有 `arguments`
+- `call` 和 `apply` 绑定 `this` 没有用
+- 不能使用 `new` 操作符
+- 没有 `prototype`
+- 不能作为构造函数
