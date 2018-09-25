@@ -245,3 +245,12 @@ console.log(addCurry(1)(2)(3)(4)()) //10
 - 不能使用 `new` 操作符
 - 没有 `prototype`
 - 不能作为构造函数
+
+## 禁用鼠标点击事件
+
+- `CSS` 方法(**最常用**)
+  `pointer-events: none`
+- `HTML`
+  `disabled` 设置为 `true`，一般只对按钮有作用。
+- `JS`
+  取消所有的监听事件，或者在监听事件中判断是否需要禁用点击事件再 `event.preventDefault();event.stopPropagation()`。

@@ -274,3 +274,46 @@ _上面是响应式设计，下面是自适应设计_ ![rwd-vs-adapt-example](/a
   `CSS` 新特性中提供了一种新的单位 `vw`。了解过这个单位的同学都知道，浏览器 `100vw` 表示的就是浏览器的视窗宽度(Viewport)。那么只要宽高设置好比例的 `vw` 就可以了。
 - `grid` 布局
   不常用。
+
+## 强制同步布局
+
+将一帧送到屏幕会采用如下顺序：
+
+`JavaScript` -> `Style` -> `Layout` -> `Paint` -> `Composite`
+
+首先 `JavaScript` 运行，然后计算样式，然后布局。但是，可以使用 `JavaScript` 强制浏览器提前执行布局。这被称为**强制同步布局**。
+
+典型的情况就是，在读操作之前进行了写操作：
+
+```js
+function logBoxHeight() {
+  box.classList.add('super-big')
+
+  // Gets the height of the box in pixels
+  // and logs it out.
+  console.log(box.offsetHeight)
+
+  //这里只要用上一帧的 offsetHeight 就可以了，取完值再对页面进行更新或者所谓的动画
+}
+```
+
+为了回答高度问题，浏览器必须先应用样式更改（由于增加了 `super-big` 类），然后运行布局。这时它才能返回正确的高度。这是不必要的，并且可能是开销很大的工作。
+
+这里有个强制同步布局的例子：[演示](https://googlesamples.github.io/web-fundamentals/tools/chrome-devtools/rendering-tools/forcedsync.html)
+
+```js
+// animation loop
+/* // [START forcedsync] */
+function update(timestamp) {
+  for (var m = 0; m < movers.length; m++) {
+    movers[m].style.left =
+      (Math.sin(movers[m].offsetTop + timestamp / 1000) + 1) * 500 + 'px'
+    // movers[m].style.left = ((Math.sin(m + timestamp/1000)+1) * 500) + 'px';
+  }
+  raf = window.requestAnimationFrame(update)
+}
+```
+
+上面的代码中，在 `requestAnimationFrame` 的回调函数中，每个 `mover` 都触发了一次强制同步布局，所以本该在一帧内只布局一次，却在上面代码中布局了 `movers.length` 次，造成了卡顿。
+
+> 在 `Chrome DevTools` 中还可以诊断 **强制同步布局**。打开 `Performance` 面板(老版本是 `Timeline` 面板)，开始记录，结束之后可以查看 `FPS` 较低的帧，看问题在哪，可以看到在调用栈中，某个函数耗时较长，而且如果触发了强制同步布局，鼠标移动到上面去会有个 `Forced reflow` 提示，可能存在性能瓶颈，接在点击该执行函数就可以看到在哪触发的强制同步布局。具体 `Chrome DevTools` 如何操作查看 [Get Started With Analyzing Runtime Performance](https://developers.google.com/web/tools/chrome-devtools/evaluate-performance/)。
