@@ -254,3 +254,19 @@ console.log(addCurry(1)(2)(3)(4)()) //10
   `disabled` 设置为 `true`，一般只对按钮有作用。
 - `JS`
   取消所有的监听事件，或者在监听事件中判断是否需要禁用点击事件再 `event.preventDefault();event.stopPropagation()`。
+
+## CommonJS AMD CMD UMD 规范
+
+- CommonJS
+  根据 `CommonJS` 规范，一个单独的文件就是一个模块。每一个模块都是一个单独的作用域，也就是说，在一个文件定义的变量（还包括函数和类），都是私有的，对其他文件是不可见的。
+  `CommonJS` 是同步的，而 `AMD` 和 `CMD` 是异步的。
+- AMD(Asynchromous Module Definition)
+  `AMD` 是 `RequireJS` 在推广过程中对模块定义的规范化产出。
+  `AMD` 异步加载模块。它的模块支持对象、函数、构造器、字符串、`JSON` 等各种类型的模块。
+  适用 `AMD` 规范适用 `define` 方法定义模块。
+  `AMD` 运行时核心思想是「Early Executing」，也就是提前执行依赖。
+- CMD(Common Module Definition)
+  `CMD` 是 `SeaJS` 在推广过程中对模块定义的规范化产出。
+- UMD(Universal Module Definition)
+  `umd` 是 `AMD` 和 `CommonJS` 的糅合。
+  先判断是否支持 `AMD`（通过判断 `define` 是否存在），存在则使用 `AMD` 方式加载模块。再判断是否支持 `Node.js` 的模块（`exports`）是否存在，存在则使用 `Node.js` 模块模式。如果两个都不存在，那么可能就使用全局变量来定义了(一般根据传入的 `root`，可能是执行的 `this`)。
