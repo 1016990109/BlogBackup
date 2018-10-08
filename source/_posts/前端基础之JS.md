@@ -156,7 +156,7 @@ console.log(input.getAttribute('value')) // Hello
 console.log(input.value) // Hello World!
 ```
 
-> 注意，除了 `value property` 外(`setAttribute('value', [value])` 会影响 `input.value`，但是 `input.value = [valie]` 并不会更改 `attribute`)，其他的 `attribute` 或 `property` 更改的时候会同时改变另外一个。
+> 注意，除了 `value property` 外(`setAttribute('value', [value])` 会影响 `input.value`，但是 `input.value = [value]` 并不会更改 `attribute`)，其他的 `attribute` 或 `property` 更改的时候会同时改变另外一个。
 
 ## load 事件和 DOMContentLoaded 事件
 
