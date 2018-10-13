@@ -270,3 +270,7 @@ console.log(addCurry(1)(2)(3)(4)()) //10
 - UMD(Universal Module Definition)
   `umd` 是 `AMD` 和 `CommonJS` 的糅合。
   先判断是否支持 `AMD`（通过判断 `define` 是否存在），存在则使用 `AMD` 方式加载模块。再判断是否支持 `Node.js` 的模块（`exports`）是否存在，存在则使用 `Node.js` 模块模式。如果两个都不存在，那么可能就使用全局变量来定义了(一般根据传入的 `root`，可能是执行的 `this`)。
+
+## Babel 升级
+
+建议使用 `npx babel-upgrade` 来升级。
