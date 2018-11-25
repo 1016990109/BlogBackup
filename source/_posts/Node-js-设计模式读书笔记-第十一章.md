@@ -5,7 +5,7 @@ tags:
   - 读书笔记
 ---
 
-# Messaging and Integration Patterns(消息和模式整合)
+# Messaging and Integration Patterns(消息传递和相应集成模式)
 
 ## Fundamentals of a messaging system(一个消息系统的基础)
 
