@@ -40,10 +40,10 @@ tags:
 
 表格: 包管理工具
 
-| 发行版          | 底层工具                 | 上层工具          |
-| --------------- | ------------------------ | ----------------- |
-| Debian-Style    | dpkg                     | apt-get, aptitude |
-| Fedora, Red Hat | Enterprise Linux, CentOS | rpm yum           |
+| 发行版                                    | 底层工具 | 上层工具          |
+| ----------------------------------------- | -------- | ----------------- |
+| Debian-Style                              | dpkg     | apt-get, aptitude |
+| Fedora, Red Hat, Enterprise Linux, CentOS | rpm      | yum               |
 
 ### 查找资源库中的软件包
 

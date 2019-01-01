@@ -2,9 +2,9 @@
 title: 《Node.js 设计模式》读书笔记 第三章
 date: 2018-06-07 10:39:52
 tags:
-    - 读书笔记
+  - 读书笔记
 categories:
-    - 学习
+  - 学习
 ---
 
 # Asynchorous Control Flow Patterns with Callbacks(使用回调的异步控制流模式)
@@ -138,9 +138,9 @@ asyncFoo(err => {
 
 下面是一些减少嵌套层次的原则：
 
-* 尽快返回。根据上下文，使用 `return`、`continue` 或 `break`，以便立即退出当前代码块，而不是写完整的 `if...else` 的语句。
-* 给函数命名，将中间结果作为参数传递。
-* 模块化代码。尽可能地将代码分成更小、更可复用的函数。
+- 尽快返回。根据上下文，使用 `return`、`continue` 或 `break`，以便立即退出当前代码块，而不是写完整的 `if...else` 的语句。
+- 给函数命名，将中间结果作为参数传递。
+- 模块化代码。尽可能地将代码分成更小、更可复用的函数。
 
 ### Applying the callback decipline(应用回调准则)
 
@@ -397,20 +397,25 @@ const spidering = new Map();
 #### Limiting the concurrency(限制并行数)
 
 ```js
-const tasks = ...
-let concurrency = 2, running = 0, completed = 0, index = 0;
+const tasks = []
+let concurrency = 2,
+  running = 0,
+  completed = 0,
+  index = 0
 function next() {
-  while(running < concurrency && index < tasks.length) {
-    task = tasks[index++];
+  while (running < concurrency && index < tasks.length) {
+    task = tasks[index++]
     task(() => {
-      if(completed === tasks.length) {
-        return finish();
+      if (completed === tasks.length) {
+        return finish()
       }
-      completed++, running--;
-      next();
-});
-running++; }
-} next();
+      completed++, running--
+      next()
+    })
+    running++
+  }
+}
+next()
 function finish() {
   //all tasks finished
 }
