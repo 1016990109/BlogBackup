@@ -2,7 +2,7 @@
 title: Vue 基础的一些注意事项
 date: 2018-04-17 15:47:16
 tags:
-    - 前端
+  - 前端
 ---
 
 最近准备学习一波 Vue，因为有 React 的基础，所以学起来倒也不是很吃力。下面是一些在学习中遇到的可能需要注意的地方。
@@ -56,12 +56,12 @@ Vue 默认情况下是会复用元素的，例如切换用户名或邮箱登录
 
 ```html
 <template v-show="!show">
-    <!-- will show 'template-show' -->
-    <div>template-show</div>
+  <!-- will show 'template-show' -->
+  <div>template-show</div>
 </template>
 
 <div v-show="!show">
-    if
+  if
 </div>
 <!-- can't use v-else after v-show -->
 ```
@@ -75,9 +75,9 @@ v-for 的优先级更高，所以可以对每一项进行 if 判断是否显示�
 直接改变数组内容的称为变异方法，如 push、pop、shift、unshift、splice、sort 等，可以响应更新；而直接生成新数组的方法如 slice、concat、filter 等则需要对 data 进行赋值，如
 
 ```javascript
-example1.items = example1.items.filter(function(item) {
-  return item.message.match(/Foo/)
-})
+example1.items = example1.items.filter(function (item) {
+  return item.message.match(/Foo/);
+});
 ```
 
 ### 不能检测更新
@@ -86,11 +86,11 @@ example1.items = example1.items.filter(function(item) {
 
 ```javascript
 // Vue.set
-Vue.set(vm.items, indexOfItem, newValue)
+Vue.set(vm.items, indexOfItem, newValue);
 // Array.prototype.splice
-vm.items.splice(indexOfItem, 1, newValue)
+vm.items.splice(indexOfItem, 1, newValue);
 //change length
-vm.items.splice(newLength)
+vm.items.splice(newLength);
 ```
 
 ## 事件处理
@@ -152,21 +152,21 @@ class 和 style 会合并属性，父组件值和组件内的值进行合并
 当子组件需要更新 foo 的值时，它需要显式地触发一个更新事件：
 
 ```js
-this.$emit('update:foo', newValue)
+this.$emit("update:foo", newValue);
 ```
 
 ### 非父子组件之间的通信
 
 ```js
-var bus = new Vue()
+var bus = new Vue();
 
 // 触发组件 A 中的事件
-bus.$emit('id-selected', 1)
+bus.$emit("id-selected", 1);
 
 // 在组件 B 创建的钩子中监听事件
-bus.$on('id-selected', function(id) {
+bus.$on("id-selected", function (id) {
   // ...
-})
+});
 ```
 
 ### 使用插槽分发内容
@@ -206,9 +206,9 @@ slot-scope 支持解构，如下：
 
 ```js
 var vm = new Vue({
-  el: '#example',
+  el: "#example",
   data: {
-    currentView: 'home' //也可以是对象组件
+    currentView: "home", //也可以是对象组件
   },
   components: {
     home: {
@@ -219,9 +219,9 @@ var vm = new Vue({
     },
     archive: {
       /* ... */
-    }
-  }
-})
+    },
+  },
+});
 ```
 
 ```html
@@ -273,19 +273,18 @@ provide: function () {
 }
 ```
 
-在任何后代都能使用getMap方法，只要在后代组件里声明注入：
+在任何后代都能使用 getMap 方法，只要在后代组件里声明注入：
 
 ```js
-inject: ['getMap']
+inject: ["getMap"];
 ```
 
 ### 内联模板
 
 ```html
 <button-message v-on:message="handleMessage" inline-template>
-      <p>slot</p>
+  <p>slot</p>
 </button-message>
 ```
 
-最后渲染的会是slot，而不是button-message定义的模板内容。
-
+最后渲染的会是 slot，而不是 button-message 定义的模板内容。

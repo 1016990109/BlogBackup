@@ -1,5 +1,5 @@
 ---
-title: 5月28日学习笔记
+title: 5月28日学习笔记(Go)
 date: 2020-03-24 17:37:00
 tags:
   - GOLANG
@@ -12,6 +12,8 @@ categories:
 ### 闭包
 
 `GOLANG` 类似于 `Node.js` 可使用闭包，使得变量只在作用域有效。举个典型的例子：
+
+<!-- more -->
 
 ```golang
 func main() {
